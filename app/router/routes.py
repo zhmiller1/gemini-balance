@@ -17,6 +17,7 @@ from app.router import (
     key_routes,
     openai_compatiable_routes,
     openai_routes,
+    queue_routes,
     scheduler_routes,
     stats_routes,
     version_routes,
@@ -49,6 +50,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(vertex_express_routes.router)
     app.include_router(files_routes.router)
     app.include_router(key_routes.router)
+    app.include_router(queue_routes.router)
 
     setup_page_routes(app)
 

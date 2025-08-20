@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from app.config.config import settings
 from app.log.logger import get_api_client_logger
 from app.core.constants import DEFAULT_TIMEOUT
+from app.service.queue.queue_decorator import queued_request
 
 logger = get_api_client_logger()
 
@@ -75,6 +76,12 @@ class GeminiApiClient(ApiClient):
                 return None
             
     async def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
+        """公共接口方法，通过队列调用实际的API请求"""
+        return await self._queued_generate_content(payload, model, api_key)
+    
+    @queued_request()
+    async def _queued_generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
+        """使用队列控制的内容生成方法"""
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         model = self._get_real_model(model)
         
@@ -118,6 +125,14 @@ class GeminiApiClient(ApiClient):
                 raise
 
     async def stream_generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> AsyncGenerator[str, None]:
+        """公共接口方法，通过队列调用流式API请求"""
+        # 对于流式请求，我们需要特殊处理，因为它返回AsyncGenerator
+        async for chunk in self._queued_stream_generate_content(payload, model, api_key):
+            yield chunk
+    
+    @queued_request()
+    async def _queued_stream_generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> AsyncGenerator[str, None]:
+        """使用队列控制的流式内容生成方法"""
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         model = self._get_real_model(model)
         

@@ -15,6 +15,7 @@ from app.router.routes import setup_routers
 from app.scheduler.scheduled_tasks import start_scheduler, stop_scheduler
 from app.service.key.key_manager import get_key_manager_instance
 from app.service.update.update_service import check_for_updates
+from app.service.queue.request_queue import get_request_queue, shutdown_request_queue
 from app.utils.helpers import get_current_version
 
 logger = get_application_logger()
@@ -38,17 +39,19 @@ def update_template_globals(app: FastAPI, update_info: dict):
 
 # --- Helper functions for lifespan ---
 async def _setup_database_and_config(app_settings):
-    """Initializes database, syncs settings, and initializes KeyManager."""
+    """Initializes database, syncs settings, initializes KeyManager and request queue."""
     initialize_database()
     logger.info("Database initialized successfully")
     await connect_to_db()
     await sync_initial_settings()
     await get_key_manager_instance(app_settings.API_KEYS, app_settings.VERTEX_API_KEYS)
-    logger.info("Database, config sync, and KeyManager initialized successfully")
+    await get_request_queue()  # Initialize request queue
+    logger.info("Database, config sync, KeyManager, and request queue initialized successfully")
 
 
 async def _shutdown_database():
-    """Disconnects from the database."""
+    """Disconnects from the database and shuts down request queue."""
+    await shutdown_request_queue()  # Shutdown request queue first
     await disconnect_from_db()
 
 

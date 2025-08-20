@@ -9,6 +9,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - ./app:/app/app  # 挂载本地代码到容器
     depends_on:
       mysql:
         condition: service_healthy
@@ -23,7 +25,7 @@ services:
     container_name: gemini-balance-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: your_root_password
+      MYSQL_ROOT_PASSWORD: mysql_root_secure_password_2024
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
